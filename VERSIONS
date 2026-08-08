@@ -1,0 +1,24 @@
+# APJ-OS component manifest — the versions this release was tested as a set.
+# Sourced by install.sh; also the human record of what belongs together.
+
+APJOS_VERSION=0.1.0
+
+# Emulator: gotaproblem/pistorm-atari-jit, branch psctrl.
+# Set to a tag once one is cut; a commit hash works too.
+PISTORM_REPO=https://github.com/gotaproblem/pistorm-atari-jit.git
+PISTORM_REF=psctrl
+
+# Desktop: gotaproblem/teradesk, branch bespoke. desktop.prg is on the Atari
+# boot disk already; this pin records which build went onto it.
+TERADESK_REPO=https://github.com/gotaproblem/teradesk.git
+TERADESK_REF=bespoke
+
+# AES: gotaproblem/freemint, branch bespoke-ws (XaAES workspaces).
+# xaaes.km is on the Atari boot disk already; this pin records its source.
+FREEMINT_REPO=https://github.com/gotaproblem/freemint.git
+FREEMINT_REF=bespoke-ws
+
+# Atari boot-disk image: release asset on gotaproblem/apj-os.
+# Downloaded by install.sh into the emulator's dkimages/ as dk0.img.
+ATARI_DISK_ASSET=apj-boot-0.1.0.img.xz
+ATARI_DISK_URL=https://github.com/gotaproblem/apj-os/releases/download/v0.1.0/apj-boot-0.1.0.img.xz
