@@ -1,7 +1,7 @@
 # APJ-OS component manifest — the versions this release was tested as a set.
 # Sourced by install.sh; also the human record of what belongs together.
 
-APJOS_VERSION=0.1.0
+APJOS_VERSION=0.1.1
 
 # Emulator: gotaproblem/pistorm-atari-jit, branch psctrl.
 # Set to a tag once one is cut; a commit hash works too.
@@ -23,4 +23,4 @@ FREEMINT_REF=apj-0.1.0
 # the configs reference it as ../dkimages) as apj-os.img.
 ATARI_DISK_NAME=apj-os.img
 ATARI_DISK_ASSET=apj-os-boot-0.1.0.img.xz
-ATARI_DISK_URL=https://github.com/gotaproblem/apj-os/releases/download/v0.1.0/apj-os-boot-0.1.0.img.xz
+ATARI_DISK_URL=https://github.com/gotaproblem/apj-os/releases/download/v0.1.1/apj-os-boot-0.1.0.img.xz
