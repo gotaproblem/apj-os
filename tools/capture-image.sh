@@ -86,6 +86,19 @@ for d in "$r"/home/*/Videos "$r"/home/*/movies "$r"/srv/media; do
     [ -d "$d" ] && echo "WARNING: media folder present in image: $d - remove before release?"
 done
 
+# Wi-Fi onboarding hygiene on the FAT boot partition: the applied file
+# contains the golden master's REAL credentials - remove it, and put a
+# fresh template in place so every flashed card greets its user with it.
+rm -f /mnt/apj-boot/wifi.txt.applied
+cat > /mnt/apj-boot/wifi.txt <<'WEOF'
+# APJ-OS Wi-Fi setup
+# Edit the three lines below with your network details, save, and boot.
+# The file is renamed to wifi.txt.applied once the settings are taken.
+SSID=YourNetworkName
+PASSWORD=YourWifiPassword
+COUNTRY=GB
+WEOF
+
 sync
 umount /mnt/apj-root /mnt/apj-boot
 losetup -d "$loop"
@@ -98,7 +111,7 @@ if ! command -v pishrink.sh >/dev/null; then
         https://raw.githubusercontent.com/Drewsif/PiShrink/master/pishrink.sh
     chmod +x /usr/local/bin/pishrink.sh
 fi
-pishrink.sh -zaX "$img"        # shrink, arm auto-expand, xz -9 multithreaded
+pishrink.sh -Za "$img"         # shrink, arm auto-expand, xz (-Z) in parallel (-a)
 
 echo "Done: $img.xz"
 echo "Upload with: gh release upload v<version> $img.xz"
