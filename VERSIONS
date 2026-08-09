@@ -18,7 +18,9 @@ TERADESK_REF=apj-0.1.0
 FREEMINT_REPO=https://github.com/gotaproblem/freemint.git
 FREEMINT_REF=apj-0.1.0
 
-# Atari boot-disk image: release asset on gotaproblem/apj-os.
-# Downloaded by install.sh into the emulator's dkimages/ as dk0.img.
-ATARI_DISK_ASSET=apj-boot-0.1.0.img.xz
-ATARI_DISK_URL=https://github.com/gotaproblem/apj-os/releases/download/v0.1.0/apj-boot-0.1.0.img.xz
+# Atari boot-disk image (apj-os.img): release asset on gotaproblem/apj-os.
+# Downloaded by install.sh into ~/dkimages/ (beside the emulator dir -
+# the configs reference it as ../dkimages) as apj-os.img.
+ATARI_DISK_NAME=apj-os.img
+ATARI_DISK_ASSET=apj-os-boot-0.1.0.img.xz
+ATARI_DISK_URL=https://github.com/gotaproblem/apj-os/releases/download/v0.1.0/apj-os-boot-0.1.0.img.xz

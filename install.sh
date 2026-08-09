@@ -64,18 +64,19 @@ say "(it will ask about building, autostart and network shares)"
 
 # --- 4. Atari boot-disk image ------------------------------------------------
 
-dkdir="$emudir/dkimages"
+# dkimages sits BESIDE the emulator directory - configs use ../dkimages
+dkdir="$HOME/dkimages"
 mkdir -p "$dkdir"
 
-if [ -e "$dkdir/dk0.img" ]; then
-    say "dk0.img already present - leaving your Atari drive C: untouched."
+if [ -e "$dkdir/$ATARI_DISK_NAME" ]; then
+    say "$ATARI_DISK_NAME already present - leaving your Atari drive C: untouched."
 else
     say "Downloading the APJ Atari boot disk ($ATARI_DISK_ASSET)"
     tmp="$dkdir/.$ATARI_DISK_ASSET.part"
     curl -fL --retry 3 -o "$tmp" "$ATARI_DISK_URL" \
         || fail "Download failed - check the release exists: $ATARI_DISK_URL"
     say "Unpacking"
-    xz -dc "$tmp" > "$dkdir/dk0.img"
+    xz -dc "$tmp" > "$dkdir/$ATARI_DISK_NAME"
     rm -f "$tmp"
 fi
 
