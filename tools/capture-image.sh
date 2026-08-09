@@ -29,6 +29,19 @@ dev="${1:?usage: capture-image.sh /dev/sdX <output-name>}"
 name="${2:?usage: capture-image.sh /dev/sdX <output-name>}"
 img="$name.img"
 
+# The capture rig is expected to be a VANILLA Raspberry Pi OS Lite - make
+# sure the few tools we and PiShrink need are present (parted/e2fsprogs
+# for the shrink, xz for compression; everything else is base coreutils).
+need=""
+for t in parted resize2fs xz curl; do
+    command -v "$t" >/dev/null || need="$need $t"
+done
+if [ -n "$need" ]; then
+    echo "Installing missing tools:$need"
+    apt-get update -qq
+    apt-get install -y parted e2fsprogs xz-utils curl
+fi
+
 [ -b "$dev" ] || { echo "$dev is not a block device"; exit 1; }
 mount | grep -q "^$dev" && { echo "$dev has mounted partitions - unmount first."; exit 1; }
 findmnt -no SOURCE / | grep -q "${dev}" && { echo "That is the running system's disk. No."; exit 1; }
@@ -47,11 +60,20 @@ r=/mnt/apj-root
 # Wi-Fi / network secrets
 rm -f "$r"/etc/NetworkManager/system-connections/* 2>/dev/null || true
 rm -f "$r"/etc/wpa_supplicant/wpa_supplicant*.conf 2>/dev/null || true
-# ssh: host keys regenerate via the regen service; drop user keys
+# ssh: drop the golden master's host keys and user keys; arm Raspberry
+# Pi OS's key-regeneration service by symlink (no container tools needed)
+# so every flashed card generates its OWN host identity on first boot.
 rm -f "$r"/etc/ssh/ssh_host_* 2>/dev/null || true
 rm -rf "$r"/home/*/.ssh "$r"/root/.ssh 2>/dev/null || true
-systemd-nspawn -q -D "$r" systemctl enable regenerate_ssh_host_keys 2>/dev/null \
-  || touch "$r"/etc/ssh/sshd_not_to_be_run 2>/dev/null || true
+svc="$r/lib/systemd/system/regenerate_ssh_host_keys.service"
+if [ -f "$svc" ]; then
+    mkdir -p "$r"/etc/systemd/system/multi-user.target.wants
+    ln -sf /lib/systemd/system/regenerate_ssh_host_keys.service \
+        "$r"/etc/systemd/system/multi-user.target.wants/regenerate_ssh_host_keys.service
+else
+    echo "WARNING: regenerate_ssh_host_keys.service not found in image -"
+    echo "         flashed cards will have NO ssh host keys until created manually."
+fi
 # histories, credentials, identity, logs
 rm -f "$r"/home/*/.bash_history "$r"/root/.bash_history 2>/dev/null || true
 rm -f "$r"/home/*/.git-credentials "$r"/home/*/.netrc 2>/dev/null || true
