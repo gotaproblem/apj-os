@@ -46,8 +46,42 @@ fi
 mount | grep -q "^$dev" && { echo "$dev has mounted partitions - unmount first."; exit 1; }
 findmnt -no SOURCE / | grep -q "${dev}" && { echo "That is the running system's disk. No."; exit 1; }
 
+# The image lands in the CURRENT DIRECTORY. If that is NAS/removable
+# scratch (/mnt/..., /media/...), an unmounted mountpoint silently fills
+# the rootfs instead - field incident: the dev card's rootfs filled and
+# ssh dropped; rescue = boot the other card, clean via USB reader. Guard:
+# scratch-looking cwd must actually be mounted, and there must be room
+# for the whole card.
+case "$PWD" in /mnt/*|/media/*)
+    findmnt -T "$PWD" -n -o TARGET | grep -qv '^/$' || {
+        echo "$PWD looks like scratch but only the rootfs is mounted there."
+        echo "Mount your scratch first (or cd elsewhere) - refusing to fill the rootfs."
+        exit 1
+    } ;;
+esac
+devsz=$(blockdev --getsize64 "$dev")
+free=$(df --output=avail -B1 . | tail -1)
+if [ "$free" -lt "$devsz" ]; then
+    echo "Not enough free space here: card is $devsz bytes, only $free available."
+    exit 1
+fi
+
 echo "== 1/3 Reading $dev -> $img (this takes a while)"
-dd if="$dev" of="$img" bs=4M conv=fsync status=progress
+# CIFS scratch quirk (field-verified): dd's final fsync can fail EAGAIN
+# with every byte already written (records in == out). Tolerate a dd
+# error ONLY when the image size exactly matches the card - anything
+# else is a real failure.
+if ! dd if="$dev" of="$img" bs=4M conv=fsync status=progress; then
+    imgsz=$(stat -c %s "$img")
+    if [ "$imgsz" = "$devsz" ]; then
+        echo "dd reported an error but the image is complete ($imgsz bytes)"
+        echo "- known benign fsync EAGAIN on CIFS; continuing."
+        sync || true
+    else
+        echo "dd FAILED: image has $imgsz of $devsz bytes. Aborting."
+        exit 1
+    fi
+fi
 
 echo "== 2/3 Sanitizing"
 loop=$(losetup -fP --show "$img")
@@ -65,13 +99,22 @@ rm -f "$r"/etc/wpa_supplicant/wpa_supplicant*.conf 2>/dev/null || true
 # so every flashed card generates its OWN host identity on first boot.
 rm -f "$r"/etc/ssh/ssh_host_* 2>/dev/null || true
 rm -rf "$r"/home/*/.ssh "$r"/root/.ssh 2>/dev/null || true
-svc="$r/lib/systemd/system/regenerate_ssh_host_keys.service"
-if [ -f "$svc" ]; then
-    mkdir -p "$r"/etc/systemd/system/multi-user.target.wants
+# Preferred mechanism: apj-sshkeys.service (ssh-keygen -A oneshot, gated
+# on the host key being absent) - RPi OS trixie's regenerate service did
+# NOT run in the field and sshd refused to start. Arm whichever exists.
+mkdir -p "$r"/etc/systemd/system/multi-user.target.wants
+if [ -f "$r/etc/systemd/system/apj-sshkeys.service" ]; then
+    ln -sf /etc/systemd/system/apj-sshkeys.service \
+        "$r"/etc/systemd/system/multi-user.target.wants/apj-sshkeys.service
+    echo "apj-sshkeys.service armed - host keys regenerate on first boot."
+elif [ -f "$r/lib/systemd/system/regenerate_ssh_host_keys.service" ]; then
     ln -sf /lib/systemd/system/regenerate_ssh_host_keys.service \
         "$r"/etc/systemd/system/multi-user.target.wants/regenerate_ssh_host_keys.service
+    echo "WARNING: only RPi OS's regenerate service found - it did NOT work"
+    echo "         on trixie in the field. Install apj-sshkeys.service on the"
+    echo "         golden master (pistorm-atari-jit install-full.sh does this)."
 else
-    echo "WARNING: regenerate_ssh_host_keys.service not found in image -"
+    echo "WARNING: no key-regeneration service in image -"
     echo "         flashed cards will have NO ssh host keys until created manually."
 fi
 # histories, credentials, identity, logs
