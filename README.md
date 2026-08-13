@@ -1,7 +1,7 @@
 # APJ-OS — Atari PiStorm JIT OS
 
 A complete, ready-to-run operating environment for a **PiStorm-equipped Atari
-ST/STe** with a **Raspberry Pi 4**: a JIT 68040 with FPU, FreeMiNT + XaAES +
+ST/STe** with a **Raspberry Pi** (see supported models below): a JIT 68040 with FPU, FreeMiNT + XaAES +
 fVDI at up to 1920×1080 in 32-bit colour, the Bespoke Desktop (TeraDesk fork)
 with live PiStorm taskbar and four truly independent virtual desktops,
 hardware-accelerated video playback, MP3 player, and Pi-side integration
@@ -20,6 +20,17 @@ Pinned versions for this release are in [`VERSIONS`](VERSIONS).
 
 ---
 
+## Supported Raspberry Pi models
+
+| Model | Status |
+|---|---|
+| Raspberry Pi 4 | **Supported** — primary platform, all release testing |
+| Raspberry Pi 3B | **Supported** — tested |
+| Raspberry Pi 3A+ | Not supported (512 MB RAM cannot fit the memory configuration) |
+| Raspberry Pi Zero 2 W | Not supported |
+
+---
+
 ## Install — three ways
 
 ### 1. Flash the SD-card image (easiest)
@@ -32,7 +43,12 @@ Pi Imager ("Use custom image") or:
 xzcat apj-os-<version>.img.xz | sudo dd of=/dev/sdX bs=4M conv=fsync status=progress
 ```
 
-Insert into the PiStorm's Pi 4, power the Atari on. The filesystem expands
+**Wi-Fi:** before the first boot, open the card's small FAT partition (visible
+on any OS) and edit `wifi.txt` with your network name, password and country
+code. The settings are applied on boot and the file is renamed to
+`wifi.txt.applied` so your credentials don't linger in plain sight.
+
+Insert into the PiStorm's Pi, power the Atari on. The filesystem expands
 itself on first boot. Default login: see the release notes.
 
 ### 2. Install script on stock Raspberry Pi OS
