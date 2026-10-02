@@ -8,8 +8,11 @@
 #   1. sanity checks (64-bit, Pi 4 family)
 #   2. clones the emulator at the version pinned in VERSIONS
 #   3. hands over to the emulator's own install-full.sh (dependencies,
-#      boot-firmware settings, optional build + autostart) - that script is
-#      idempotent and has the canonical knowledge of Pi-side setup
+#      boot-firmware settings, build, autostart) - that script is
+#      idempotent and has the canonical knowledge of Pi-side setup.
+#      APJ-OS is an appliance, so the build and the autostart service are
+#      on by default here (BUILD=0 / SERVICE=0 ./install.sh to skip them);
+#      the other questions (web browser, Samba share, ...) are still asked
 #   4. downloads the APJ Atari boot-disk image into ~/dkimages/apj-os.img
 #
 # Re-running is safe: existing clones are updated to the pinned ref, the
@@ -62,7 +65,9 @@ say "Handing over to the emulator's install-full.sh"
 say "(it will ask about building, autostart and network shares)"
 # APJOS_VERSION: install-full.sh writes it to atari-share/APJOS.VER, which
 # the desktop taskbar reads as S:\APJOS.VER ("APJ-OS v1.0")
-( cd "$emudir" && chmod +x install-full.sh && APJOS_VERSION="$APJOS_VERSION" ./install-full.sh )
+( cd "$emudir" && chmod +x install-full.sh && \
+  BUILD="${BUILD:-1}" SERVICE="${SERVICE:-1}" APJOS_VERSION="$APJOS_VERSION" \
+  ./install-full.sh )
 
 # --- 4. Atari boot-disk image ------------------------------------------------
 

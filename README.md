@@ -38,11 +38,12 @@ xzcat apj-os-<version>.img.xz | sudo dd of=/dev/sdX bs=4M conv=fsync status=prog
 For Wi-Fi, open `wifi.txt` on the card's boot partition (any computer can
 read it) and fill in your network before the first boot; it is applied and
 renamed `wifi.txt.applied`. Insert the card into the PiStorm's Pi 4 and power
-the Atari on. The first boot expands the filesystem; then the PiStorm setup
-page comes up and boots APJ-OS after its countdown.
+the Atari on. The first boot expands the filesystem; from then on
+the machine boots straight into APJ-OS (see [Power-on](#power-on) below).
 
-Login on the console or over ssh: **`pistorm` / `pistorm`** — change it with
-`passwd`. Every card generates its own ssh host keys on first boot.
+Linux login over ssh: **`pistorm` / `pistorm`** — change it with `passwd`.
+Every card generates its own ssh host keys on first boot. (The Pi's console,
+tty1, belongs to the emulator.)
 
 ### 2. Install script on stock Raspberry Pi OS
 
@@ -59,9 +60,12 @@ sudo reboot
 ```
 
 The script clones the emulator at the pinned tag, runs its own
-`install-full.sh` (dependencies, boot-firmware settings, build, autostart,
-GEM apps onto the S: drive, the version file) and downloads the Atari
-boot-disk image into place.
+`install-full.sh` (dependencies, boot-firmware settings, build, the autostart
+service, GEM apps onto the S: drive, the version file) and downloads the Atari
+boot-disk image into place. The build and the autostart are on by default
+(`BUILD=0` / `SERVICE=0 ./install.sh` to leave them out); it still asks about
+the web browser engine and the Samba share. After the reboot the Pi boots
+into APJ-OS exactly like the SD image.
 
 ### 3. Manual
 
@@ -70,6 +74,35 @@ which tags belong together; the [releases page](../../releases) carries the
 Atari boot-disk image (`apj-os-boot-<version>.img.xz`).
 
 ---
+
+## Power-on
+
+APJ-OS is an appliance: switch the Atari on and it ends up at the desktop.
+
+1. The Pi boots Raspberry Pi OS Lite (console only, no desktop).
+2. `pistorm.service` starts the emulator on tty1, as root, with
+   `~/configs/psctrl.cfg`.
+3. The **PiStorm setup page** appears on the ST's monitor (mirrored to HDMI,
+   or on HDMI alone when no ST monitor is connected). It lists the builds
+   in `psctrl.cfg` and counts down 5 seconds on the one booted last — on a
+   fresh install that is `apj-os`. Leave it and it boots; any key stops the
+   countdown, `Enter` boots the build under the cursor, `E` edits it. Every
+   key is in the emulator's `INSTALL-README.md`, "The setup page".
+4. The `[apj-os]` build boots EmuTOS, FreeMiNT from `C:\AUTO`, XaAES and the
+   Bespoke Desktop, at 1920×1080 in 32-bit colour on HDMI.
+
+Changing that:
+
+| To | Do |
+|---|---|
+| boot with no page at all | `countdown 0` in the `[psctrl]` block of `~/configs/psctrl.cfg` |
+| boot a different build by default | boot it once from the page — the page boots whatever was booted last |
+| stop the autostart | `sudo systemctl disable --now pistorm` (`enable` to put it back) |
+| run the emulator by hand | `cd ~/pistorm-atari-jit && sudo ./emulator --config ../configs/psctrl.cfg` |
+| see the emulator's output | `journalctl -u pistorm -f` |
+
+Ctrl+Alt+Del is the ST's warm reset; the installer disables its Linux
+console meaning (reboot the Pi), so the combo is safe to use.
 
 ## What goes where
 
