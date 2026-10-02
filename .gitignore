@@ -1,2 +1,12 @@
+# macOS folder metadata (created the moment Finder touches a checkout)
+.DS_Store
+._*
+
+# capture outputs - never commit an image to the repo (release assets
+# go on the GitHub release; the asset limit is 2 GiB anyway)
 *.img
 *.img.xz
+
+# editor droppings
+*.swp
+*~

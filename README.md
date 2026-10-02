@@ -1,7 +1,7 @@
 # APJ-OS — Atari PiStorm JIT OS
 
 A complete, ready-to-run operating environment for a **PiStorm-equipped Atari
-ST/STe** with a **Raspberry Pi 4**: a JIT 68040 with FPU, FreeMiNT + XaAES +
+ST/STe** with a **Raspberry Pi** (see supported models below): a JIT 68040 with FPU, FreeMiNT + XaAES +
 fVDI at up to 1920×1080 in 32-bit colour over HDMI, a Fluent-style themed
 desktop (the Bespoke Desktop, a TeraDesk fork) with a live PiStorm taskbar and
 four independent virtual desktops, and a set of PiStorm GEM apps that hand the
@@ -20,6 +20,17 @@ and packages them with configuration that is known to work together.
 | GEM apps | [apj-os-tools](https://github.com/gotaproblem/apj-os-tools) | PSCTRL, PSMON, MP3GEM, VIDGEM, PDFGEM, WEBGEM, PSCLEAN, skins, icons, fonts |
 
 The tags for this release are in [`VERSIONS`](VERSIONS).
+
+---
+
+## Supported Raspberry Pi models
+
+| Model | Status |
+|---|---|
+| Raspberry Pi 4 | **Supported** — primary platform, all release testing |
+| Raspberry Pi 3B | **Supported** — tested; install with `install.sh` (the SD image is built for the Pi 4) |
+| Raspberry Pi 3A+ | Not supported (512 MB RAM cannot fit the memory configuration) |
+| Raspberry Pi Zero 2 W | Not supported |
 
 ---
 
