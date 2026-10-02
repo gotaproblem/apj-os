@@ -12,8 +12,9 @@
 #   -o DIR    output directory                    default ~<you>/apj-os-release/<v>
 #   -u NAME   the image's user                    default pistorm
 #   -p PASS   that user's password                default pistorm
-#   -m FILE   copy this prebuilt ./emulator in instead of building (saves
-#             30+ minutes; it must be built from PISTORM_REF on trixie arm64)
+#   -m FILE   copy this prebuilt ./emulator in instead of building (it must
+#             be built from PISTORM_REF on trixie arm64). Without -m, a binary
+#             cached by an earlier run of the same commit is reused.
 #   -k        keep the uncompressed image as well
 #
 # Environment: WEB=0 leaves the browser engine out (default 1), SAMBA=0
@@ -21,7 +22,7 @@
 #
 # Run it ON A PI 4 with a 64-bit OS: the image is arm64, so the chroot runs
 # natively - no qemu. Stop the emulator first (sudo systemctl stop pistorm):
-# the build compiles for half an hour on all four cores. Needs ~12 GB free.
+# the build compiles on all cores. Needs ~8 GB free.
 #
 # What happens:
 #   1. stock image -> grown by 6 GB -> loop-mounted, chroot prepared
@@ -120,6 +121,7 @@ fi
 log "base image: $(basename "$base")  sha256 $(sha256sum "$base" | awk '{print $1}')"
 
 say "Unpacking the base image"
+# shellcheck disable=SC2216  # cp reads the pipe via /dev/stdin
 case "$base" in
     # sparse: the stock image is mostly empty space; don't spend SD on zeros
     *.xz) xz -dc -T0 "$base" | cp --sparse=always /dev/stdin "$img" ;;
@@ -170,6 +172,20 @@ log "cmdline.txt (stock): $(cat "$R/boot/firmware/cmdline.txt")"
 printf '#!/bin/sh\nexit 101\n' > "$R/usr/sbin/policy-rc.d"
 chmod 755 "$R/usr/sbin/policy-rc.d"
 
+# systemd is not running in here and `systemctl enable --now` refuses
+# outright instead of just enabling. install-full.sh's own chroot check
+# can't see the chroot (it runs as the user, and /proc/1/root is root-only),
+# so a build-time systemctl in front of the real one drops --now: units
+# are enabled here and start at the card's first boot. sudo's secure_path
+# finds /usr/local/sbin first. Removed again in the scrub.
+mkdir -p "$R/usr/local/sbin"
+cat > "$R/usr/local/sbin/systemctl" <<'SHIM'
+#!/bin/sh
+for a in "$@"; do shift; [ "$a" = --now ] || set -- "$@" "$a"; done
+exec /usr/bin/systemctl "$@"
+SHIM
+chmod 755 "$R/usr/local/sbin/systemctl"
+
 # --- 2. user ---------------------------------------------------------------------
 say "Creating user '$user'"
 hash="$(openssl passwd -6 "$pass")"
@@ -211,18 +227,39 @@ dirty=""
 git -C "$here" diff --quiet HEAD || dirty=" (uncommitted changes in $here are NOT in the image)"
 log "apj-os: $(git -C "$here" rev-parse HEAD)$dirty"
 
-# --- 4. the installer -------------------------------------------------------------------
-build=1
-if [ -n "$prebuilt" ]; then
-    build=0
-    install -m 755 -o 1000 -g 1000 "$prebuilt" "$R$uhome/pistorm-atari-jit/emulator"
-    log "emulator binary: prebuilt $prebuilt  md5 $(md5sum < "$prebuilt" | cut -c1-32)"
-fi
-say "install-full.sh (BUILD=$build WEB=$WEB SAMBA=$SAMBA) - a build takes 30+ minutes"
-asu "cd ~/pistorm-atari-jit && BUILD=$build SERVICE=1 CADGUARD=1 MACFIX=1 \
+# --- 4. the installer, then the emulator build ------------------------------
+# install-full.sh runs with BUILD=0 so that anything it trips over fails in
+# minutes, not after the compile. The compile is done here instead, in
+# parallel (the Makefile on its own is serial - that was the 2 hours), and
+# its binary is cached in the output folder by commit: a re-run of the
+# same PISTORM_REF reuses it and skips the compile altogether.
+say "install-full.sh (WEB=$WEB SAMBA=$SAMBA, build afterwards)"
+asu "cd ~/pistorm-atari-jit && BUILD=0 SERVICE=1 CADGUARD=1 MACFIX=1 \
      SAMBA=$SAMBA WEB=$WEB KILLGUI=0 APJOS_VERSION=$APJOS_VERSION \
      ./install-full.sh < /dev/null"
-[ -x "$R$uhome/pistorm-atari-jit/emulator" ] || fail "no emulator binary after install-full.sh"
+
+sha="$(git -C "$emu" rev-parse "$PISTORM_REF^{commit}")"
+cache="$out/.emulator-$sha"
+dest="$R$uhome/pistorm-atari-jit/emulator"
+if [ -n "$prebuilt" ]; then
+    install -m 755 -o 1000 -g 1000 "$prebuilt" "$dest"
+    log "emulator binary: prebuilt $prebuilt  md5 $(md5sum < "$prebuilt" | cut -c1-32)"
+elif [ -x "$cache" ]; then
+    install -m 755 -o 1000 -g 1000 "$cache" "$dest"
+    log "emulator binary: cached from an earlier run of ${sha:0:7}  md5 $(md5sum < "$cache" | cut -c1-32)"
+else
+    # one job per core, but no more than one per 1.5 GB of RAM: the CPU/JIT
+    # units are big compiles and an OOM kill would waste the lot
+    memmb=$(( $(awk '/MemTotal/{print $2}' /proc/meminfo) / 1024 ))
+    jobs=$(( memmb / 1500 )); [ "$jobs" -ge 1 ] || jobs=1
+    [ "$jobs" -le "$(nproc)" ] || jobs=$(nproc)
+    say "Building the emulator (make -j$jobs, PI4)"
+    t0=$(date +%s)
+    asu "cd ~/pistorm-atari-jit && make -j$jobs PIMODEL=PI4"
+    [ -x "$dest" ] || fail "make finished but there is no ./emulator"
+    cp "$dest" "$cache"
+    log "emulator binary: built -j$jobs in $(( ($(date +%s) - t0) / 60 )) min  md5 $(md5sum < "$dest" | cut -c1-32)"
+fi
 
 # psweb's MemoryHigh/MemoryMax were sized from THIS Pi's RAM; the card may
 # go into a 2 GB Pi. psweb polices itself at 40% of the RAM it finds.
@@ -239,7 +276,7 @@ log "natfeats: $(cd "$R$uhome/atari-share/apj-os/natfeats" && echo *)"
 
 # --- 6. scrub -----------------------------------------------------------------------------------
 say "Scrubbing"
-rm -f "${R:?}/etc/sudoers.d/zz-apj-build" "${R:?}/usr/sbin/policy-rc.d"
+rm -f "${R:?}/etc/sudoers.d/zz-apj-build" "${R:?}/usr/sbin/policy-rc.d" "${R:?}/usr/local/sbin/systemctl"
 ch apt-get clean
 rm -rf "${R:?}"/var/lib/apt/lists/*
 rm -f "${R:?}"/etc/ssh/ssh_host_*            # apj-sshkeys makes this card's own

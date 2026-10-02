@@ -4,8 +4,10 @@
 #     tools/make-release.sh [-s master.img] [-m prebuilt-emulator] [--disk-only]
 #
 #   -s FILE      curated Atari boot disk     default ~/dkimages/apj-os-dev.img
-#   -m FILE      prebuilt ./emulator for the SD image instead of a 30+ minute
-#                build (must be built from PISTORM_REF)
+#   -m FILE      prebuilt ./emulator for the SD image instead of building
+#                (must be built from PISTORM_REF). Without it the first run
+#                compiles in parallel and caches the binary; re-runs of the
+#                same tag reuse it.
 #   --disk-only  just the boot disk (no sudo, two minutes)
 #
 # Run as your normal user from the apj-os tree, emulator stopped. Produces

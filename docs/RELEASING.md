@@ -45,7 +45,9 @@ next release: bump `APJOS_VERSION`, the `*_REF` tags and the
 
 ```bash
 cd ~/apj-os
-tools/make-release.sh                     # everything; ~45 min with the build
+tools/make-release.sh                     # everything. The first run compiles the
+                                          # emulator in parallel and caches it in
+                                          # ~/apj-os-release/<v>/; re-runs reuse it
 tools/make-release.sh -m ~/pistorm-atari-jit/emulator
                                           # reuse a binary built from apj-1.0
 tools/make-release.sh --disk-only         # just the boot disk, ~1 min
