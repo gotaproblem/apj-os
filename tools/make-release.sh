@@ -71,7 +71,7 @@ if [ "$disk_only" = 0 ]; then
     say "2/3 SD-card image (sudo)"
     args=(-b "$bootimg" -e "$emu" -o "$out")
     [ -z "$prebuilt" ] || args+=(-m "$prebuilt")
-    sudo WEB="${WEB:-1}" SAMBA="${SAMBA:-1}" "$here/tools/build-sd-image.sh" "${args[@]}"
+    sudo WEB="${WEB:-1}" SAMBA="${SAMBA:-1}" MAKE_JOBS="${MAKE_JOBS:-2}" "$here/tools/build-sd-image.sh" "${args[@]}"
 fi
 
 say "3/3 notes + checksums"
@@ -121,15 +121,17 @@ sd="apj-os-$APJOS_VERSION.img.xz"
     echo
     echo "_(fill in)_"
 } > "$notes"
-( cd "$out" && sha256sum ./*.img.xz | sed 's| \./| |' > SHA256SUMS )
+# only the release assets - the Raspberry Pi OS download sits in here too
+( cd "$out" && sha256sum apj-os-*.img.xz > SHA256SUMS )
 
 say "Assets in $out:"
-ls -l "$out"/*.xz "$out"/*.md "$out"/SHA256SUMS
+ls -l "$out"/apj-os-*.img.xz "$out"/*.md "$out"/SHA256SUMS
 cat <<EOF
 
 Next (docs/RELEASING.md step 4): edit $notes, boot-test the SD image, then
     cd $here
     git tag -a v$APJOS_VERSION -m "APJ-OS $APJOS_VERSION" && git push origin v$APJOS_VERSION
-    gh release create v$APJOS_VERSION $out/*.img.xz $out/SHA256SUMS \\
+    gh release create v$APJOS_VERSION $out/apj-os-$APJOS_VERSION.img.xz \\
+        $out/apj-os-boot-$APJOS_VERSION.img.xz $out/SHA256SUMS \\
         --title "APJ-OS $APJOS_VERSION" --notes-file $notes
 EOF

@@ -97,7 +97,8 @@ Edit `release-notes-1.0.md` (what's new, upgrade notes, known issues), then:
 ```bash
 cd ~/apj-os
 git tag -a v1.0 -m "APJ-OS 1.0" && git push origin v1.0
-gh release create v1.0 ~/apj-os-release/1.0/*.img.xz ~/apj-os-release/1.0/SHA256SUMS \
+gh release create v1.0 ~/apj-os-release/1.0/apj-os-1.0.img.xz \
+    ~/apj-os-release/1.0/apj-os-boot-1.0.img.xz ~/apj-os-release/1.0/SHA256SUMS \
     --title "APJ-OS 1.0" --notes-file ~/apj-os-release/1.0/release-notes-1.0.md
 ```
 

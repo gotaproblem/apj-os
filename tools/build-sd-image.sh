@@ -18,7 +18,7 @@
 #   -k        keep the uncompressed image as well
 #
 # Environment: WEB=0 leaves the browser engine out (default 1), SAMBA=0
-# the [pistorm] share (default 1).
+# the [pistorm] share (default 1), MAKE_JOBS=n the compile jobs (default 2).
 #
 # Run it ON A PI 4 with a 64-bit OS: the image is arm64, so the chroot runs
 # natively - no qemu. Stop the emulator first (sudo systemctl stop pistorm):
@@ -248,14 +248,13 @@ elif [ -x "$cache" ]; then
     install -m 755 -o 1000 -g 1000 "$cache" "$dest"
     log "emulator binary: cached from an earlier run of ${sha:0:7}  md5 $(md5sum < "$cache" | cut -c1-32)"
 else
-    # one job per core, but no more than one per 1.5 GB of RAM: the CPU/JIT
-    # units are big compiles and an OOM kill would waste the lot
-    memmb=$(( $(awk '/MemTotal/{print $2}' /proc/meminfo) / 1024 ))
-    jobs=$(( memmb / 1500 )); [ "$jobs" -ge 1 ] || jobs=1
-    [ "$jobs" -le "$(nproc)" ] || jobs=$(nproc)
-    say "Building the emulator (make -j$jobs, PI4)"
+    # -j2 is known good on a 2 GB Pi 4; MAKE_JOBS=n overrides. taskset puts
+    # the jobs on all four cores - isolcpus=2,3 keeps the scheduler off the
+    # emulator's cores, but the emulator is stopped for the whole build.
+    jobs="${MAKE_JOBS:-2}"
+    say "Building the emulator (make -j$jobs on cores 0-3, PI4)"
     t0=$(date +%s)
-    asu "cd ~/pistorm-atari-jit && make -j$jobs PIMODEL=PI4"
+    asu "cd ~/pistorm-atari-jit && taskset -c 0-3 make -j$jobs PIMODEL=PI4"
     [ -x "$dest" ] || fail "make finished but there is no ./emulator"
     cp "$dest" "$cache"
     log "emulator binary: built -j$jobs in $(( ($(date +%s) - t0) / 60 )) min  md5 $(md5sum < "$dest" | cut -c1-32)"
@@ -309,8 +308,11 @@ echo ", $newsec" | sfdisk -q -N 2 "$img"
 truncate -s $(( (p2start + newsec) * 512 )) "$img"
 log "image: $(( (p2start + newsec) / 2048 )) MiB uncompressed"
 
-say "xz -9 (all cores - several minutes)"
-xz -9 -T0 -k -f "$img"
+# -6, not -9: -9 wants ~675 MB per thread, which on a 2 GB Pi means one or
+# two threads and swap. -6 is ~95 MB per thread; the file is a little
+# bigger. Pinned to all four cores like the compile.
+say "xz -6 on cores 0-3"
+taskset -c 0-3 xz -6 -T4 -k -f "$img"
 ( cd "$out" && sha256sum "$name.img.xz" > "$name.img.xz.sha256" )
 log "$(ls -l "$img.xz")"
 [ "$(stat -c %s "$img.xz")" -lt 2147483648 ] || log "WARNING: over GitHub's 2 GiB release-asset limit"
