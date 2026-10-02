@@ -38,7 +38,7 @@ while [ $# -gt 0 ]; do
 done
 
 emu="$HOME/pistorm-atari-jit"
-out="$HOME/apj-os-release/$APJOS_VERSION"
+out="${OUT:-$HOME/apj-os-release}/$APJOS_VERSION"   # OUT=/media/usb/rel to build elsewhere
 say()  { printf '\n\033[1;35m[release]\033[0m %s\n' "$*"; }
 fail() { printf '\n\033[1;31m[release]\033[0m %s\n' "$*" >&2; exit 1; }
 

@@ -121,7 +121,8 @@ log "base image: $(basename "$base")  sha256 $(sha256sum "$base" | awk '{print $
 
 say "Unpacking the base image"
 case "$base" in
-    *.xz) xz -dc -T0 "$base" > "$img" ;;
+    # sparse: the stock image is mostly empty space; don't spend SD on zeros
+    *.xz) xz -dc -T0 "$base" | cp --sparse=always /dev/stdin "$img" ;;
     *)    cp --sparse=always "$base" "$img" ;;
 esac
 
