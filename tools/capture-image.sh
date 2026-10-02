@@ -47,7 +47,7 @@ mount | grep -q "^$dev" && { echo "$dev has mounted partitions - unmount first."
 findmnt -no SOURCE / | grep -q "${dev}" && { echo "That is the running system's disk. No."; exit 1; }
 
 echo "== 1/3 Reading $dev -> $img (this takes a while)"
-dd if="$dev" of="$img" bs=4M conv=fsync status=progress
+dd if="$dev" of="$img" bs=4M conv=fsync status=progress || true
 
 echo "== 2/3 Sanitizing"
 loop=$(losetup -fP --show "$img")
@@ -98,7 +98,7 @@ if ! command -v pishrink.sh >/dev/null; then
         https://raw.githubusercontent.com/Drewsif/PiShrink/master/pishrink.sh
     chmod +x /usr/local/bin/pishrink.sh
 fi
-pishrink.sh -zaX "$img"        # shrink, arm auto-expand, xz -9 multithreaded
+pishrink.sh -Za "$img"        # shrink, arm auto-expand, xz -9 multithreaded
 
 echo "Done: $img.xz"
 echo "Upload with: gh release upload v<version> $img.xz"

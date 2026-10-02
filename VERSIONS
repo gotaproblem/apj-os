@@ -1,26 +1,43 @@
-# APJ-OS component manifest — the versions this release was tested as a set.
-# Sourced by install.sh; also the human record of what belongs together.
+# APJ-OS component manifest - the versions this release was tested as a set.
+# Sourced by install.sh and the tools/ release scripts; also the human
+# record of what belongs together. Each *_REF is an annotated tag cut in
+# that repo on the commit the shipped binary was built from.
 
-APJOS_VERSION=0.1.0
+APJOS_VERSION=1.0
 
-# Emulator: gotaproblem/pistorm-atari-jit, branch psctrl.
-# Set to a tag once one is cut; a commit hash works too.
+# Emulator: gotaproblem/pistorm-atari-jit. Release branch apj-os-1.0 (main
+# @ 790008a + the installer/README update), tagged apj-1.0. install.sh and
+# the SD image check this tag out and build it; the GEM programs in
+# configs/gem-binaries at this tag are what goes onto S: and the boot disk.
 PISTORM_REPO=https://github.com/gotaproblem/pistorm-atari-jit.git
-PISTORM_REF=apj-0.1.0
+PISTORM_REF=apj-1.0
 
-# Desktop: gotaproblem/teradesk, branch bespoke. desktop.prg is on the Atari
-# boot disk already; this pin records which build went onto it.
-TERADESK_REPO=https://github.com/gotaproblem/teradesk.git
-TERADESK_REF=apj-0.1.0
-
-# AES: gotaproblem/freemint, branch bespoke-ws (XaAES workspaces).
-# xaaes.km is on the Atari boot disk already; this pin records its source.
+# AES: gotaproblem/freemint, branch apj-os-fluent (Fluent renderer
+# render_apj, window chrome, AA text, workspaces). xaaes.km is on the boot
+# disk; this pin records its source.
 FREEMINT_REPO=https://github.com/gotaproblem/freemint.git
-FREEMINT_REF=apj-0.1.0
+FREEMINT_REF=apj-1.0
 
-# Atari boot-disk image (apj-os.img): release asset on gotaproblem/apj-os.
-# Downloaded by install.sh into ~/dkimages/ (beside the emulator dir -
-# the configs reference it as ../dkimages) as apj-os.img.
+# Desktop: gotaproblem/teradesk, branch apj-os-fluent (Bespoke Desktop:
+# taskbar, BTHEME Fluent theme, workspaces). desktop.prg is on the boot disk.
+TERADESK_REPO=https://github.com/gotaproblem/teradesk.git
+TERADESK_REF=apj-1.0
+
+# Terminal: gotaproblem/toswin2, branch apj-os-fluent. toswin2.app is on
+# the boot disk.
+TOSWIN2_REPO=https://github.com/gotaproblem/toswin2.git
+TOSWIN2_REF=apj-1.0
+
+# GEM apps: gotaproblem/apj-os-tools (APJSKIN, PSCTRL, PSMON, MP3GEM,
+# VIDGEM, PDFGEM, WEBGEM, PSCLEAN, skins, icons, fonts). The binaries are
+# carried in the emulator's configs/gem-binaries; this pin records their
+# source.
+APJTOOLS_REPO=https://github.com/gotaproblem/apj-os-tools.git
+APJTOOLS_REF=apj-1.0
+
+# Atari boot-disk image: release asset on gotaproblem/apj-os, built by
+# tools/make-bootdisk.sh. install.sh downloads it into ~/dkimages/ (beside
+# the emulator dir - psctrl.cfg's disk_path is ../dkimages) as apj-os.img.
 ATARI_DISK_NAME=apj-os.img
-ATARI_DISK_ASSET=apj-os-boot-0.1.0.img.xz
-ATARI_DISK_URL=https://github.com/gotaproblem/apj-os/releases/download/v0.1.0/apj-os-boot-0.1.0.img.xz
+ATARI_DISK_ASSET=apj-os-boot-1.0.img.xz
+ATARI_DISK_URL=https://github.com/gotaproblem/apj-os/releases/download/v1.0/apj-os-boot-1.0.img.xz

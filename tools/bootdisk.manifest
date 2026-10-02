@@ -1,0 +1,45 @@
+# bootdisk.manifest - what make-bootdisk.sh changes on the curated boot disk
+# (C:) to make the release disk. One action per line, applied in order:
+#
+#   rm  PATH      delete a file or a whole folder. PATH is absolute on C:,
+#                 '/' separated, case-insensitive; * ? [] globs allowed.
+#                 A pattern that matches nothing is noted, not an error.
+#   put SRC PATH  copy SRC onto C: as PATH (overwrites). SRC is relative to
+#                 the emulator tree at the pinned PISTORM_REF, so the disk
+#                 gets exactly the binaries that release tags.
+#
+# Mac litter (._*, .DS_Store, .Trashes, ...) is NOT listed here: atariclean
+# removes it first, and bootdisk.py catches AppleDouble files that lost
+# their long names. Free space is zeroed afterwards, so whatever is
+# removed here is really gone from the image.
+
+# --- development leftovers -------------------------------------------------
+rm /MINT/1-19-F8F/XAAES/XAAES1.KM
+rm /MINT/1-19-F8F/XAAES/XAAES_ORIG.KM
+rm /MINT/1-19-F8F/XAAES/XAAES-*.KM
+rm /MINT/1-19-F8F/XAAES/XAAES3-NOWORK.KM
+rm /MINT/1-19-F8F/XAAES/XAAES.KM.ORIG
+rm /MINT/1-19-F8F/XAAES/__XAAES3-NOWORK.BAK
+rm /MINT/1-19-F8F/XAAES/XA_BOOT.LOG
+rm /MINT/1-19-F8F/XAAES/APJICONS-??.BI
+rm /MINT/1-19-F8F/SYS-ROOT/OPT/GEM/TERADESK/CICONS.RS
+rm /MINT/1-19-F8F/SYS-ROOT/OPT/GEM/TERADESK/DESKTOP.PR
+rm /MINT/1-19-F8F/SYS-ROOT/OPT/GEM/TERADESK/DESKTOP28.PRG
+rm /MINT/1-19-F8F/SYS-ROOT/OPT/GEM/TERADESK/DESKTOP-ORIG.PRG
+rm /MINT/1-19-F8F/SYS-ROOT/TMP/*
+rm /MISC
+
+# --- personal state ----------------------------------------------------------
+rm /HIVE.INF
+rm /CLIPBRD/SCRAP.TXT
+rm /MINT/1-19-F8F/SYS-ROOT/ROOT/HIGHWIRE.CFG
+rm /MINT/1-19-F8F/SYS-ROOT/ROOT/BOOKMARK.HTM
+rm /MINT/1-19-F8F/SYS-ROOT/ROOT/BOOKMARK.CSS
+rm /MINT/1-19-F8F/SYS-ROOT/ROOT/NYANCAT.INF
+rm /MINT/1-19-F8F/SYS-ROOT/ROOT/AST.INF
+rm /MINT/1-19-F8F/SYS-ROOT/ROOT/.DOSBOX
+
+# --- PiSTorm accessories on C:\ (loaded at boot). The GEM programs are NOT
+# --- copied to C: - they live on S:\apj-os\natfeats (install-full.sh).
+put configs/gem-binaries/PSCTRL.ACC /PSCTRL.ACC
+put configs/gem-binaries/PSMON.ACC  /PSMON.ACC
